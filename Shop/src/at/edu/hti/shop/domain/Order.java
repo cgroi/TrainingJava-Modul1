@@ -1,10 +1,10 @@
 package at.edu.hti.shop.domain;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Order {
   
-  private ArrayList<OrderLine> alOrderLines = new ArrayList<OrderLine>();
+  private HashMap<Long,OrderLine> hmOrderLines = new HashMap<>();
   
   private IFinalPrizeCalc finalPrizeCalc;
 
@@ -14,43 +14,63 @@ public class Order {
 	  finalPrizeCalc = new ShippingCostCalc();
 	}
 
-	public void add(OrderLine e) {
+	public void add(OrderLine line) {
 
-		if (e == null)
+		if (line == null) {
 			return;
-
-		alOrderLines.add(e);
+		}
+		
+		Product prod = line.getProduct();
+		if (prod == null) {
+		  return;
+		}
+		long prodID = prod.getId();
+		
+		if (!hmOrderLines.containsKey(prodID)) {
+		  //new product, add as new line
+		  hmOrderLines.put(prodID, line);
+		} else {
+		  //line with this product already exists, add qty
+		  int qty = line.getAmount();
+		  OrderLine existingLine = hmOrderLines.get(prodID);
+		  existingLine.setAmount(existingLine.getAmount()+qty);
+		}
 	}
 	
-	public OrderLine getLine(int index) {
-	  return alOrderLines.get(index);
+	public OrderLine getLine(long productID) {
+	  return hmOrderLines.get(productID);
 	}
 	
-	private OrderLine removeLine(int index) {
-	  return alOrderLines.remove(index);
+	private OrderLine removeLine(long productID) {
+	  return hmOrderLines.remove(productID);
 	}
 	
 	public int size() {
-	  return alOrderLines.size();
+	  return hmOrderLines.size();
 	}
 	
-	public void setLineAmount(int index, int amount) {
-	  OrderLine line = getLine(index);
+	public void setLineAmount(long productID, int amount) {
+	  OrderLine line = getLine(productID);
 	  if (line == null) {
 	    return;
 	  }
 	  if (amount <= 0) {
-	    removeLine(index);
+	    removeLine(productID);
 	  } else {
 	    line.setAmount(amount);
 	  }
+	}
+	
+	public void setLineAmount(Product product, int amount) {
+	  long productID = product.getId();
+	  setLineAmount(productID, amount);
 	}
 
 	public double calcPrize() {
 		double sum = 0;
 
-		for (OrderLine line : alOrderLines) {
-			sum += line.getProduct().getPrize()* line.getAmount() ;
+		for (OrderLine line : hmOrderLines.values()) {
+			sum += line.getProduct().getPrize() * line.getAmount();
 		}
 		
 		sum = finalPrizeCalc.getFinalPrize(sum);
@@ -61,6 +81,6 @@ public class Order {
 	@Override
 	public String toString() {
 	
-		return alOrderLines + " \n => " +calcPrize()+"\n\n";
+		return hmOrderLines.values() + " \n => " +calcPrize()+"\n\n";
 	}
 }

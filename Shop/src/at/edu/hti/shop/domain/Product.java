@@ -1,6 +1,6 @@
 package at.edu.hti.shop.domain;
 
-public class Product {
+public abstract class Product {
 	private String name;
 	private long id;
 	private double prize;
