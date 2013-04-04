@@ -7,8 +7,6 @@ public class Order {
   private HashMap<Long,OrderLine> hmOrderLines = new HashMap<>();
   
   private IFinalPrizeCalc finalPrizeCalc;
-
-	private static final long serialVersionUID = 1L;
 	
 	public Order() {
 	  finalPrizeCalc = new ShippingCostCalc();
