@@ -1,5 +1,6 @@
 package at.edu.hti.shop.domain;
 
+import java.util.Collection;
 import java.util.HashMap;
 
 public class Order {
@@ -39,8 +40,26 @@ public class Order {
 	  return hmOrderLines.get(productID);
 	}
 	
-	private OrderLine removeLine(long productID) {
+	public Collection<OrderLine> getLines() {
+	  return hmOrderLines.values();
+	}
+	
+	public OrderLine removeLine(long productID) {
 	  return hmOrderLines.remove(productID);
+	}
+	
+	public OrderLine removeLine(OrderLine orderLine) {
+	  return removeLine(orderLine.getProduct().getId());
+	}
+	
+	
+	public boolean containsProductType(Class<? extends Product> productType) {
+	  for (OrderLine ol : hmOrderLines.values()) {
+	    if (ol.getProduct().getClass().equals(productType)) {
+	      return true;
+	    }
+	  }
+	  return false;
 	}
 	
 	public int size() {

@@ -1,10 +1,16 @@
 package at.edu.hti.shop;
 
+import java.util.ArrayList;
+
 import at.edu.hti.shop.domain.Lebensmittel;
 import at.edu.hti.shop.domain.Order;
 import at.edu.hti.shop.domain.OrderLine;
 import at.edu.hti.shop.domain.Product;
 import at.edu.hti.shop.domain.Werkzeug;
+import at.edu.hti.shop.specification.DeliveryTimeSpecification;
+import at.edu.hti.shop.specification.MaxWeightSpecification;
+import at.edu.hti.shop.specification.ProductTypeSpecification;
+import at.edu.hti.shop.specification.tools.ISpecification;
 
 public class App {
   
@@ -32,27 +38,166 @@ public class App {
     OrderLine line6 = new OrderLine(nagel, 2000);
     OrderLine line7 = new OrderLine(schaufel, 3);
     OrderLine line8 = new OrderLine(axt, 2);
-
-		shopOrder.add(line1);
-		shopOrder.add(line2);
-		System.out.println(shopOrder.size());
-		System.out.println(shopOrder);
-
-		shopOrder.setLineAmount(1,8);
-
-		System.out.println(shopOrder.size());
-		System.out.println(shopOrder);
-
-		shopOrder.setLineAmount(2,0);
-
-		System.out.println(shopOrder.size());
-		System.out.println(shopOrder);
-
-		shopOrder.add(line3);
-		shopOrder.add(line4);
-		
-    System.out.println(shopOrder.size());
-    System.out.println(shopOrder);
-
+//
+//		shopOrder.add(line1);
+//		shopOrder.add(line2);
+//		System.out.println(shopOrder.size());
+//		System.out.println(shopOrder);
+//
+//		shopOrder.setLineAmount(1,8);
+//
+//		System.out.println(shopOrder.size());
+//		System.out.println(shopOrder);
+//
+//		shopOrder.setLineAmount(2,0);
+//
+//		System.out.println(shopOrder.size());
+//		System.out.println(shopOrder);
+//
+//		shopOrder.add(line3);
+//		shopOrder.add(line4);
+//		
+//    System.out.println(shopOrder.size());
+//    System.out.println(shopOrder);
+    
+    
+    shopOrder = new Order();
+    shopOrder.add(line1);
+    shopOrder.add(line2);
+    shopOrder.add(line3);
+    shopOrder.add(line4);
+    shopOrder.add(line5);
+    shopOrder.add(line6);
+    shopOrder.add(line7);
+    shopOrder.add(line8);
+    
+    System.out.println("original order: "+shopOrder);
+    
+    System.out.println("\n\n---------------SPLITTING------------------");
+    
+    //Lebensmittel, Lieferzeit <= 20 Tage, maximales Auftragsgewicht 10 kg
+    System.out.println("\n\nsplit rules:");
+    DeliveryTimeSpecification<OrderLine> devTime = new DeliveryTimeSpecification<OrderLine>(2);
+    MaxWeightSpecification<Order> maxWeight = new MaxWeightSpecification<Order>(10.0);
+    ProductTypeSpecification<OrderLine> prodType = new ProductTypeSpecification<OrderLine>(Lebensmittel.class);
+    System.out.println("\n");
+    ISpecification<OrderLine> prodSpec = devTime.And(prodType);
+    ISpecification<Order> orderSpec = maxWeight;
+    
+    ArrayList<Order> subOrders = new ArrayList<>();
+    
+    Order splitOrder = new Order();
+    
+    for (OrderLine orderLine : shopOrder.getLines()) {
+      if (prodSpec.isSatisfiedBy(orderLine)) {
+        splitOrder.add(orderLine);
+        if (!orderSpec.isSatisfiedBy(splitOrder)) {
+          splitOrder.removeLine(orderLine);
+        } else {
+          System.out.println("ADDING: "+orderLine);
+        }
+      }
+    }
+    
+    for (OrderLine orderLine : splitOrder.getLines()) {
+      shopOrder.removeLine(orderLine);
+    }
+    
+    if (splitOrder.size() > 0) {
+      subOrders.add(splitOrder);
+    }
+    System.out.println("\n----------\nsub orders: ");
+    for (Order subOrder : subOrders) {
+      System.out.println("  "+subOrder);
+    }
+    System.out.println("remaining: "+shopOrder);
+    
+    //restliche Lebensmittel, Lieferzeit egal, maximales Auftragsgewicht 10 kg
+    System.out.println("\n\nsplit rules:");
+    prodSpec = new ProductTypeSpecification<OrderLine>(Lebensmittel.class);;
+    orderSpec = new MaxWeightSpecification<Order>(10.0);
+    System.out.println("\n");
+    while(shopOrder.containsProductType(Lebensmittel.class)) {
+      splitOrder = new Order();
+      for (OrderLine orderLine : shopOrder.getLines()) {
+        if (prodSpec.isSatisfiedBy(orderLine)) {
+          splitOrder.add(orderLine);
+          if (!orderSpec.isSatisfiedBy(splitOrder)) {
+            splitOrder.removeLine(orderLine);
+          } else {
+            System.out.println("ADDING: "+orderLine);
+          }
+        }
+      }
+      for (OrderLine orderLine : splitOrder.getLines()) {
+        shopOrder.removeLine(orderLine);
+      }
+      
+      if (splitOrder.size() > 0) {
+        subOrders.add(splitOrder);
+      }else {
+        //just in case an orderline is left that alone is larger than the max weight
+        break;
+      }
+    }
+    System.out.println("\n----------\nsub orders: ");
+    for (Order subOrder : subOrders) {
+      System.out.println("  "+subOrder);
+    }
+    System.out.println("\n----------\nremaining: "+shopOrder);
+    
+    //Werkzeug, Lieferzeit egal, maximales Auftragsgewicht 25 kg
+    System.out.println("\n\nsplit rules:");
+    maxWeight = new MaxWeightSpecification<Order>(25.0);
+    prodType = new ProductTypeSpecification<OrderLine>(Werkzeug.class);
+    System.out.println("\n");
+    prodSpec = prodType;
+    orderSpec = maxWeight;
+    
+    splitOrder = new Order();
+    
+    while(shopOrder.containsProductType(Werkzeug.class)) {
+      splitOrder = new Order();
+      for (OrderLine orderLine : shopOrder.getLines()) {
+        if (prodSpec.isSatisfiedBy(orderLine)) {
+          splitOrder.add(orderLine);
+          if (!orderSpec.isSatisfiedBy(splitOrder)) {
+            splitOrder.removeLine(orderLine);
+          } else {
+            System.out.println("ADDING: "+orderLine);
+          }
+        }
+      }
+      for (OrderLine orderLine : splitOrder.getLines()) {
+        shopOrder.removeLine(orderLine);
+      }
+      
+      if (splitOrder.size() > 0) {
+        subOrders.add(splitOrder);
+      } else {
+        //just in case an orderline is left that alone is larger than the max weight
+        break;
+      }
+    }
+    System.out.println("\n----------\nsub orders: ");
+    for (Order subOrder : subOrders) {
+      System.out.println("  "+subOrder);
+    }
+    if (shopOrder.size() > 0) {
+      System.out.println("\n----------\nremaining: "+shopOrder);
+    }
+    
+    System.out.println("\n\n---------------JOINING------------------");
+    
+    for (Order subOrder : subOrders) {
+      for (OrderLine line : subOrder.getLines()) {
+        shopOrder.add(line);
+      }
+    }
+    
+    subOrders = new ArrayList<>();
+    
+    System.out.println("joined order: "+shopOrder);
+    
 	}
 }
