@@ -24,6 +24,12 @@ package at.edu.hti.shop.specification.tools;
 public interface ISpecification<T> {
   
   boolean isSatisfiedBy(T candidate);
+  
+  public ISpecification<T> And(ISpecification<T> s2);
+  
+  public ISpecification<T> Or(ISpecification<T> s2);
+  
+  public ISpecification<T> Not();
 
 }
 
